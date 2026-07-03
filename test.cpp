@@ -44,9 +44,6 @@ class Robot{
                 mind_map[virtual_position.y - 1].resize(mind_map[virtual_position.y - 1].size() + 1);
                 mind_map[virtual_position.y - 1][virtual_position.x + 2] = '?'; //atas
 
-                std::cout << mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size() << '\n';
-                std::cout << mind_map[virtual_position.y + 1].size() - mind_map[virtual_position.y + 2].size() << '\n';
-
                 if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
                     mind_map[virtual_position.y - 2].insert(mind_map[virtual_position.y - 2].begin() + mind_map[virtual_position.y - 2].size() - 2, '?');
                 }
@@ -60,11 +57,8 @@ class Robot{
         void expand_x_minus(){
             this->virtual_position.x -= 1;
             this->current_position.x -= 1;
-            
-            static int corner = 0;
 
             if(mind_map[virtual_position.y][virtual_position.x - 1] == '?'){
-                corner++;
                 mind_map[virtual_position.y].resize(mind_map[virtual_position.y].size() + 1);
                 mind_map[virtual_position.y].insert(mind_map[virtual_position.y].begin(), '?');
                 this->virtual_position.x += 1;
@@ -78,7 +72,13 @@ class Robot{
                 mind_map[virtual_position.y - 1].insert(mind_map[virtual_position.y - 1].begin(), '?');
                 mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
 
-                if(corner < 1);
+                if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
+                    mind_map[virtual_position.y - 2].insert(mind_map[virtual_position.y - 2].begin() + mind_map[virtual_position.y - 2].size() - 2, '?');
+                }
+
+                if((mind_map[virtual_position.y + 1].size() - mind_map[virtual_position.y + 2].size()) > 0){
+                    mind_map[virtual_position.y + 2].insert(mind_map[virtual_position.y + 2].begin() + mind_map[virtual_position.y + 2].size() - 2, '?');
+                }
             }
         }
 
@@ -99,13 +99,11 @@ class Robot{
 int main(){
     Robot bot1;
     int i = 0;
-    //bot1.print();
     while(i < 5){
-        bot1.expand_x_plus();
         bot1.print();
+        bot1.expand_x_minus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        //std::cout << "\x1B[H";
-        std::cout << "\n\n";
+        std::cout << "\x1B[H";
     }
 }
