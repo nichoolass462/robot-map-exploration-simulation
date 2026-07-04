@@ -59,26 +59,34 @@ class Robot{
             this->current_position.x -= 1;
 
             if(mind_map[virtual_position.y][virtual_position.x - 1] == '?'){
-                mind_map[virtual_position.y].resize(mind_map[virtual_position.y].size() + 1);
-                mind_map[virtual_position.y].insert(mind_map[virtual_position.y].begin(), '?');
+                for(int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
                 this->virtual_position.x += 1;
-                mind_map[virtual_position.y][virtual_position.x - 1] = ' ';//tengah
+                mind_map[virtual_position.y][virtual_position.x - 2] = '?';
+                mind_map[virtual_position.y + 1][virtual_position.x - 2] = '?';
+                mind_map[virtual_position.y - 1][virtual_position.x - 2] = '?';
 
-                mind_map[virtual_position.y + 1].resize(mind_map[virtual_position.y + 1].size() + 1);
+                mind_map[virtual_position.y][virtual_position.x - 1] = ' ';//tengah
+                mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
+                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
+
+                mind_map[virtual_position.y + 2][virtual_position.x - 1] = '?';
+                mind_map[virtual_position.y - 2][virtual_position.x - 1] = '?';
+
+                /*mind_map[virtual_position.y + 1].resize(mind_map[virtual_position.y + 1].size() + 1);
                 mind_map[virtual_position.y + 1].insert(mind_map[virtual_position.y + 1].begin(), '?');
                 mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
 
                 mind_map[virtual_position.y - 1].resize(mind_map[virtual_position.y - 1].size() + 1);
                 mind_map[virtual_position.y - 1].insert(mind_map[virtual_position.y - 1].begin(), '?');
-                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
+                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';*/
 
-                if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
+                /*if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
                     mind_map[virtual_position.y - 2].insert(mind_map[virtual_position.y - 2].begin() + mind_map[virtual_position.y - 2].size() - 2, '?');
                 }
 
                 if((mind_map[virtual_position.y + 1].size() - mind_map[virtual_position.y + 2].size()) > 0){
                     mind_map[virtual_position.y + 2].insert(mind_map[virtual_position.y + 2].begin() + mind_map[virtual_position.y + 2].size() - 2, '?');
-                }
+                }*/
             }
         }
 
