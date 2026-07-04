@@ -27,7 +27,7 @@ class Robot{
             this->current_position = {2, 2};
         }
 
-        void expand_x_plus(){
+        void expand_x_plus(){//right
             this->virtual_position.x += 1;
             this->current_position.x += 1;
 
@@ -54,7 +54,7 @@ class Robot{
             }//expand x+ wise
         }
 
-        void expand_x_minus(){
+        void expand_x_minus(){//left
             this->virtual_position.x -= 1;
             this->current_position.x -= 1;
 
@@ -82,6 +82,25 @@ class Robot{
             }
         }
 
+        void expand_y_minus(){//up
+            this->virtual_position.y -= 1;
+            this->current_position.y -= 1;
+            if(mind_map[virtual_position.y - 1][virtual_position.x] == '?'){
+                mind_map[virtual_position.y - 1][virtual_position.x] = ' ';
+                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
+                mind_map[virtual_position.y - 1][virtual_position.x + 1] = ' ';
+
+                mind_map.insert(mind_map.begin(), std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+                virtual_position.y += 1;
+                mind_map[virtual_position.y - 2][virtual_position.x] = '?';
+                mind_map[virtual_position.y - 2][virtual_position.x - 1] = '?';
+                mind_map[virtual_position.y - 2][virtual_position.x + 1] = '?';
+
+                mind_map[virtual_position.y - 1][virtual_position.x - 2] = '?';
+                mind_map[virtual_position.y - 1][virtual_position.x + 2] = '?';
+            }
+        }
+
         void print(){
             
             for(int i = 0; i < mind_map.size(); i++){
@@ -99,11 +118,25 @@ class Robot{
 int main(){
     Robot bot1;
     int i = 0;
-    while(i < 5){
+    /*while(i < 5){
         bot1.print();
         bot1.expand_x_minus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
-    }
+    }*/
+
+   bot1.print();
+   bot1.expand_y_minus();
+   bot1.print();
+   bot1.expand_y_minus();
+   bot1.print();
+   bot1.expand_y_minus();
+   bot1.print();
+   bot1.expand_x_minus();
+   bot1.print();
+   bot1.expand_x_minus();
+   bot1.print();
+   bot1.expand_x_minus();
+   bot1.print();
 }
