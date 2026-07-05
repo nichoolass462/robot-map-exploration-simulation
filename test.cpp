@@ -32,25 +32,18 @@ class Robot{
             this->current_position.x += 1;
 
             if(mind_map[virtual_position.y][virtual_position.x + 1] == '?'){
-                mind_map[virtual_position.y][virtual_position.x + 1] = ' ';
-                mind_map[virtual_position.y].resize(mind_map[virtual_position.y].size() + 1);
-                mind_map[virtual_position.y][virtual_position.x + 2] = '?'; //tengah
+                for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');
+                //this->virtual_position.x += 1;
+                mind_map[virtual_position.y][virtual_position.x + 2] = '?';
+                mind_map[virtual_position.y + 1][virtual_position.x + 2] = '?';
+                mind_map[virtual_position.y - 1][virtual_position.x + 2] = '?';
 
+                mind_map[virtual_position.y][virtual_position.x + 1] = ' ';//tengah
                 mind_map[virtual_position.y + 1][virtual_position.x + 1] = ' ';
-                mind_map[virtual_position.y + 1].resize(mind_map[virtual_position.y + 1].size() + 1);
-                mind_map[virtual_position.y + 1][virtual_position.x + 2] = '?'; //bawah
-
                 mind_map[virtual_position.y - 1][virtual_position.x + 1] = ' ';
-                mind_map[virtual_position.y - 1].resize(mind_map[virtual_position.y - 1].size() + 1);
-                mind_map[virtual_position.y - 1][virtual_position.x + 2] = '?'; //atas
 
-                if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
-                    mind_map[virtual_position.y - 2].insert(mind_map[virtual_position.y - 2].begin() + mind_map[virtual_position.y - 2].size() - 2, '?');
-                }
-
-                if((mind_map[virtual_position.y + 1].size() - mind_map[virtual_position.y + 2].size()) > 0){
-                    mind_map[virtual_position.y + 2].insert(mind_map[virtual_position.y + 2].begin() + mind_map[virtual_position.y + 2].size() - 2, '?');
-                }
+                mind_map[virtual_position.y + 2][virtual_position.x + 1] = '?';
+                mind_map[virtual_position.y - 2][virtual_position.x + 1] = '?';
             }//expand x+ wise
         }
 
@@ -71,22 +64,6 @@ class Robot{
 
                 mind_map[virtual_position.y + 2][virtual_position.x - 1] = '?';
                 mind_map[virtual_position.y - 2][virtual_position.x - 1] = '?';
-
-                /*mind_map[virtual_position.y + 1].resize(mind_map[virtual_position.y + 1].size() + 1);
-                mind_map[virtual_position.y + 1].insert(mind_map[virtual_position.y + 1].begin(), '?');
-                mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
-
-                mind_map[virtual_position.y - 1].resize(mind_map[virtual_position.y - 1].size() + 1);
-                mind_map[virtual_position.y - 1].insert(mind_map[virtual_position.y - 1].begin(), '?');
-                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';*/
-
-                /*if((mind_map[virtual_position.y - 1].size() - mind_map[virtual_position.y - 2].size()) > 0){
-                    mind_map[virtual_position.y - 2].insert(mind_map[virtual_position.y - 2].begin() + mind_map[virtual_position.y - 2].size() - 2, '?');
-                }
-
-                if((mind_map[virtual_position.y + 1].size() - mind_map[virtual_position.y + 2].size()) > 0){
-                    mind_map[virtual_position.y + 2].insert(mind_map[virtual_position.y + 2].begin() + mind_map[virtual_position.y + 2].size() - 2, '?');
-                }*/
             }
         }
 
@@ -109,6 +86,25 @@ class Robot{
             }
         }
 
+        void expand_y_plus(){
+            this->virtual_position.y += 1;
+            this->current_position.y += 1;
+            if(mind_map[virtual_position.y + 1][virtual_position.x] == '?'){
+                mind_map[virtual_position.y + 1][virtual_position.x] = ' ';
+                mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
+                mind_map[virtual_position.y + 1][virtual_position.x + 1] = ' ';
+
+                mind_map.push_back(std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+                //virtual_position.y += 1;
+                mind_map[virtual_position.y + 2][virtual_position.x] = '?';
+                mind_map[virtual_position.y + 2][virtual_position.x - 1] = '?';
+                mind_map[virtual_position.y + 2][virtual_position.x + 1] = '?';
+
+                mind_map[virtual_position.y + 1][virtual_position.x - 2] = '?';
+                mind_map[virtual_position.y + 1][virtual_position.x + 2] = '?';
+            }
+        }
+
         void print(){
             
             for(int i = 0; i < mind_map.size(); i++){
@@ -126,25 +122,36 @@ class Robot{
 int main(){
     Robot bot1;
     int i = 0;
-    /*while(i < 5){
+    while(i < 5){
         bot1.print();
         bot1.expand_x_minus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
-    }*/
+    }
 
-   bot1.print();
-   bot1.expand_y_minus();
-   bot1.print();
-   bot1.expand_y_minus();
-   bot1.print();
-   bot1.expand_y_minus();
-   bot1.print();
-   bot1.expand_x_minus();
-   bot1.print();
-   bot1.expand_x_minus();
-   bot1.print();
-   bot1.expand_x_minus();
-   bot1.print();
+    while(i < 10){
+        bot1.print();
+        bot1.expand_y_minus();
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+
+    while(i < 15){
+        bot1.print();
+        bot1.expand_x_plus();
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+
+    while(i < 18){
+        bot1.print();
+        bot1.expand_y_plus();
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+
 }
