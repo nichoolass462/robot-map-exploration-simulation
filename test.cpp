@@ -3,11 +3,41 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <random>
+
+const std::vector <std::vector<char>> map = {
+    {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ','#','#','#',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ','#','#','#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#','#',' ','#'},
+    {'#',' ',' ','#','#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'}
+};
+
 
 struct Position{
     int y;
     int x;
 };
+
+Position random_pos_picker(){
+    std::random_device seed;
+    std::mt19937 generator(seed());
+    std::uniform_int_distribution<int> random_x(1, map[0].size() - 1);
+    std::uniform_int_distribution<int> random_y(1, map.size() - 1);
+
+    int y, x;
+    do{
+        y = random_y(generator);
+        x = random_x(generator);
+    }while(map[y][x] != ' ');
+
+    return {y, x};
+}
 
 class Robot{
     private :
@@ -23,8 +53,7 @@ class Robot{
         Position virtual_position;
         Position current_position;
         Robot(){
-            this->virtual_position = {2, 2};
-            this->current_position = {2, 2};
+            this->virtual_position = this->current_position = random_pos_picker();
         }
 
         void expand_x_plus(){//right
