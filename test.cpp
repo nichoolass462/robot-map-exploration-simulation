@@ -6,6 +6,7 @@
 #include <random>
 #include <unordered_map>
 #include <array>
+#include <utility>
 
 /*const std::vector <std::vector<char>> map = {
     {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'},
@@ -79,29 +80,37 @@ class Robot{
             {' ', '?', '?', '?', ' '}
         };
 
+        const std::array<Position, 9> offsets{{
+            { 0,  0},//self
+            { 0, -1},//kiri
+            { 0,  1},//kanan
+            {-1,  0},//atas
+            { 1,  0},//bawah
+            {-1, -1},//kiri atas
+            { 1, -1},//kiri bawah
+            {-1,  1},//kanan atas
+            { 1,  1}//kanan bawah
+        }};
+
+        void discover_tile(const Position& pos){
+            map_memo.insert({pos, 
+                (map[pos.y][pos.x] == ' ') ? TileState::EMPTY : TileState::WALL});
+
+            mind_map[pos.y][pos.x] = ((map[pos.y][pos.x] == ' ') ? ' ' : '#');
+        }
+
         std::unordered_map<Position, TileState, PositionHash> map_memo;
 
     public :
         Position virtual_position;
         Position current_position;
+
         Robot(){
             //this->virtual_position = this->current_position = random_pos_picker();
             this->virtual_position = {2, 2};
             this->current_position = {2, 2};
 
             //insert sekeliling ke map memo dulu. biar ga error PENTINGGG!!!!!!!!!!!!!!!
-            const std::array<Position, 9> offsets{{
-                { 0,  0},
-                { 0, -1},
-                { 0,  1},
-                {-1,  0},
-                { 1,  0},
-                {-1, -1},
-                { 1, -1},
-                {-1,  1},
-                { 1,  1}
-            }};
-
             for(const Position& offset : offsets){
                 Position p{
                     virtual_position.y + offset.y,
@@ -120,72 +129,52 @@ class Robot{
                 this->current_position.x += 1;
 
                 if(map_memo.find(Position{virtual_position.y, virtual_position.x + 1}) == map_memo.end()){
-                    std::cout << "\nexpanding map\n";
                     if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1) {for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');}
 
-                    map_memo.insert({{virtual_position.y, virtual_position.x + 1}, 
-                        (map[virtual_position.y][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
-                    
-                    mind_map[virtual_position.y][virtual_position.x + 1] = ((map[virtual_position.y][virtual_position.x + 1] == ' ') ? ' ' : '#');
+                    discover_tile({virtual_position.y, virtual_position.x + 1});
 
-                    if(map_memo.find(Position{virtual_position.y + 1, virtual_position.x + 1}) == map_memo.end()){
-                        map_memo.insert({{virtual_position.y + 1, virtual_position.x + 1}, 
-                            (map[virtual_position.y + 1][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
-                        
-                        mind_map[virtual_position.y + 1][virtual_position.x + 1] = ((map[virtual_position.y + 1][virtual_position.x + 1] == ' ') ? ' ' : '#');
-                    }
-
-                    if(map_memo.find(Position{virtual_position.y - 1, virtual_position.x + 1}) == map_memo.end()){
-                        map_memo.insert({{virtual_position.y - 1, virtual_position.x + 1}, 
-                            (map[virtual_position.y - 1][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
-
-                        mind_map[virtual_position.y - 1][virtual_position.x + 1] = ((map[virtual_position.y - 1][virtual_position.x + 1] == ' ') ? ' ' : '#');
+                    for(const Position& d : std::array<Position, 2>{{{-1, 1}, {1, 1}}}){
+                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
+                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
+                        }
                     }
                 }
             }
-            else{
-                std::cout << "hit wall\n";
-                return;
-            }
-
-
-            /*if(mind_map[virtual_position.y][virtual_position.x + 1] == '?'){
-                if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1)for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');
-                //this->virtual_position.x += 1;
-                mind_map[virtual_position.y][virtual_position.x + 2] = '?';
-                mind_map[virtual_position.y + 1][virtual_position.x + 2] = '?';
-                mind_map[virtual_position.y - 1][virtual_position.x + 2] = '?';
-
-                mind_map[virtual_position.y][virtual_position.x + 1] = ' ';//tengah
-                mind_map[virtual_position.y + 1][virtual_position.x + 1] = ' ';
-                mind_map[virtual_position.y - 1][virtual_position.x + 1] = ' ';
-
-                mind_map[virtual_position.y + 2][virtual_position.x + 1] = '?';
-                mind_map[virtual_position.y - 2][virtual_position.x + 1] = '?';
-            }//expand x+ wise*/
-            
+            else return;
         }
 
         void expand_x_minus(){//left
-            this->virtual_position.x -= 1;
-            this->current_position.x -= 1;
+            auto iterator = map_memo.find({virtual_position.y, virtual_position.x - 1});
+            if(iterator->second != TileState::WALL){
+                this->virtual_position.x -= 1;
+                this->current_position.x -= 1;
+                //std::cout << "\nmoving left\n";
+                if(map_memo.find(Position{virtual_position.y, virtual_position.x - 1}) == map_memo.end()){
+                    if(virtual_position.x - 1 == 0){
+                        for (int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
+                        this->virtual_position.x += 1;
 
-            if(mind_map[virtual_position.y][virtual_position.x - 1] == '?'){
-                if(virtual_position.x - 1 == 0){
-                    for (int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
-                    this->virtual_position.x += 1;
+                        std::unordered_map<Position, TileState, PositionHash> new_map;
+
+                        for(const auto &pair : map_memo){
+                            Position new_pos{pair.first.y, pair.first.x + 1};
+
+                            new_map.insert({new_pos, pair.second});
+                        }
+
+                        map_memo = std::move(new_map);
+                    }
+
+                    discover_tile({virtual_position.y, virtual_position.x - 1});
+
+                    for(const Position& d : std::array<Position, 2>{{{-1, -1}, {1, -1}}}){
+                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
+                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
+                        }
+                    }
                 }
-                mind_map[virtual_position.y][virtual_position.x - 2] = '?';
-                mind_map[virtual_position.y + 1][virtual_position.x - 2] = '?';
-                mind_map[virtual_position.y - 1][virtual_position.x - 2] = '?';
-
-                mind_map[virtual_position.y][virtual_position.x - 1] = ' ';//tengah
-                mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
-                mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
-
-                mind_map[virtual_position.y + 2][virtual_position.x - 1] = '?';
-                mind_map[virtual_position.y - 2][virtual_position.x - 1] = '?';
             }
+            else return;
         }
 
         void expand_y_minus(){//up
@@ -260,24 +249,25 @@ int main(){
     Robot bot1;
     int i = 0;
     //bot1.print();
-    while(i < 5){
+    while(i < 3){
         std::cout << '\n' << i << '\n';
         bot1.print();
         bot1.expand_x_plus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        //std::cout << "\x1B[H";
+        std::cout << "\x1B[H";
     }
 
-    /*while(i < 10){
+    while(i < 6){
+        std::cout << '\n' << i << '\n';
         bot1.print();
-        bot1.expand_y_minus();
+        bot1.expand_x_minus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
     }
 
-    while(i < 15){
+    /*while(i < 15){
         bot1.print();
         bot1.expand_x_plus();
         i++;
