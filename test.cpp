@@ -4,8 +4,10 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <unordered_map>
+#include <array>
 
-const std::vector <std::vector<char>> map = {
+/*const std::vector <std::vector<char>> map = {
     {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'},
     {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ','#'},
     {'#',' ',' ',' ','#','#','#',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ','#'},
@@ -16,12 +18,40 @@ const std::vector <std::vector<char>> map = {
     {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ',' ',' ',' ','#'},
     {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ',' ',' ',' ',' ','#'},
     {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'}
+};*/
+
+const std::vector <std::vector<char>> map = {
+    {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#'},
+    {'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'}
 };
 
 
 struct Position{
     int y;
     int x;
+
+    bool operator==(const Position& other) const{
+        return x == other.x && y == other.y;
+    }
+};
+
+struct PositionHash{
+    std::size_t operator()(const Position& other) const{
+        return (std::hash<int>{}(other.x) ^ std::hash<int>{}(other.y) << 1);
+    }
+};
+
+enum class TileState{
+    EMPTY, 
+    WALL
 };
 
 Position random_pos_picker(){
@@ -49,19 +79,78 @@ class Robot{
             {' ', '?', '?', '?', ' '}
         };
 
+        std::unordered_map<Position, TileState, PositionHash> map_memo;
+
     public :
         Position virtual_position;
         Position current_position;
         Robot(){
-            this->virtual_position = this->current_position = random_pos_picker();
+            //this->virtual_position = this->current_position = random_pos_picker();
+            this->virtual_position = {2, 2};
+            this->current_position = {2, 2};
+
+            //insert sekeliling ke map memo dulu. biar ga error PENTINGGG!!!!!!!!!!!!!!!
+            const std::array<Position, 9> offsets{{
+                { 0,  0},
+                { 0, -1},
+                { 0,  1},
+                {-1,  0},
+                { 1,  0},
+                {-1, -1},
+                { 1, -1},
+                {-1,  1},
+                { 1,  1}
+            }};
+
+            for(const Position& offset : offsets){
+                Position p{
+                    virtual_position.y + offset.y,
+                    virtual_position.x + offset.x
+                };
+
+                map_memo.insert({p, map[p.y][p.x] == ' ' ? TileState::EMPTY : TileState::WALL});
+            }
         }
 
         void expand_x_plus(){//right
-            this->virtual_position.x += 1;
-            this->current_position.x += 1;
+            auto iterator = map_memo.find({virtual_position.y, virtual_position.x + 1});
+            if(iterator->second != TileState::WALL){
+                //std::cout << "\na";
+                this->virtual_position.x += 1;
+                this->current_position.x += 1;
 
-            if(mind_map[virtual_position.y][virtual_position.x + 1] == '?'){
-                for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');
+                if(map_memo.find(Position{virtual_position.y, virtual_position.x + 1}) == map_memo.end()){
+                    std::cout << "\nexpanding map\n";
+                    if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1) {for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');}
+
+                    map_memo.insert({{virtual_position.y, virtual_position.x + 1}, 
+                        (map[virtual_position.y][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
+                    
+                    mind_map[virtual_position.y][virtual_position.x + 1] = ((map[virtual_position.y][virtual_position.x + 1] == ' ') ? ' ' : '#');
+
+                    if(map_memo.find(Position{virtual_position.y + 1, virtual_position.x + 1}) == map_memo.end()){
+                        map_memo.insert({{virtual_position.y + 1, virtual_position.x + 1}, 
+                            (map[virtual_position.y + 1][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
+                        
+                        mind_map[virtual_position.y + 1][virtual_position.x + 1] = ((map[virtual_position.y + 1][virtual_position.x + 1] == ' ') ? ' ' : '#');
+                    }
+
+                    if(map_memo.find(Position{virtual_position.y - 1, virtual_position.x + 1}) == map_memo.end()){
+                        map_memo.insert({{virtual_position.y - 1, virtual_position.x + 1}, 
+                            (map[virtual_position.y - 1][virtual_position.x + 1] == ' ') ? TileState::EMPTY : TileState::WALL});
+
+                        mind_map[virtual_position.y - 1][virtual_position.x + 1] = ((map[virtual_position.y - 1][virtual_position.x + 1] == ' ') ? ' ' : '#');
+                    }
+                }
+            }
+            else{
+                std::cout << "hit wall\n";
+                return;
+            }
+
+
+            /*if(mind_map[virtual_position.y][virtual_position.x + 1] == '?'){
+                if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1)for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');
                 //this->virtual_position.x += 1;
                 mind_map[virtual_position.y][virtual_position.x + 2] = '?';
                 mind_map[virtual_position.y + 1][virtual_position.x + 2] = '?';
@@ -73,7 +162,8 @@ class Robot{
 
                 mind_map[virtual_position.y + 2][virtual_position.x + 1] = '?';
                 mind_map[virtual_position.y - 2][virtual_position.x + 1] = '?';
-            }//expand x+ wise
+            }//expand x+ wise*/
+            
         }
 
         void expand_x_minus(){//left
@@ -81,8 +171,10 @@ class Robot{
             this->current_position.x -= 1;
 
             if(mind_map[virtual_position.y][virtual_position.x - 1] == '?'){
-                for(int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
-                this->virtual_position.x += 1;
+                if(virtual_position.x - 1 == 0){
+                    for (int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
+                    this->virtual_position.x += 1;
+                }
                 mind_map[virtual_position.y][virtual_position.x - 2] = '?';
                 mind_map[virtual_position.y + 1][virtual_position.x - 2] = '?';
                 mind_map[virtual_position.y - 1][virtual_position.x - 2] = '?';
@@ -104,8 +196,11 @@ class Robot{
                 mind_map[virtual_position.y - 1][virtual_position.x - 1] = ' ';
                 mind_map[virtual_position.y - 1][virtual_position.x + 1] = ' ';
 
-                mind_map.insert(mind_map.begin(), std::vector <char>(mind_map[virtual_position.y].size(), ' '));
-                virtual_position.y += 1;
+                if(virtual_position.y - 1 == 0){
+                    mind_map.insert(mind_map.begin(), std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+                    virtual_position.y += 1;
+                }
+
                 mind_map[virtual_position.y - 2][virtual_position.x] = '?';
                 mind_map[virtual_position.y - 2][virtual_position.x - 1] = '?';
                 mind_map[virtual_position.y - 2][virtual_position.x + 1] = '?';
@@ -123,7 +218,7 @@ class Robot{
                 mind_map[virtual_position.y + 1][virtual_position.x - 1] = ' ';
                 mind_map[virtual_position.y + 1][virtual_position.x + 1] = ' ';
 
-                mind_map.push_back(std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+                if(virtual_position.y + 1 == mind_map.size() - 1)mind_map.push_back(std::vector <char>(mind_map[virtual_position.y].size(), ' '));
                 //virtual_position.y += 1;
                 mind_map[virtual_position.y + 2][virtual_position.x] = '?';
                 mind_map[virtual_position.y + 2][virtual_position.x - 1] = '?';
@@ -138,11 +233,24 @@ class Robot{
             
             for(int i = 0; i < mind_map.size(); i++){
                 for(int j = 0; j < mind_map[i].size(); j++){
-                    if(i == virtual_position.y && j == virtual_position.x)std::cout << 'o';
-                    else std::cout << mind_map[i][j];
+                    auto iterator = map_memo.find(Position{i, j});
+                    if(iterator == map_memo.end()) std::cout << '?';
+                    else if(i == virtual_position.y && j == virtual_position.x)std::cout << 'o';
+                    else{
+                        TileState state = iterator->second;
+                        std::cout << ((state == TileState::WALL) ? '#' : ' ');
+                    }
+                    //else std::cout << mind_map[i][j];
                 }
+                std::cout << "                                      ";
                 std::cout << '\n';
             }
+            std::cout << "x : " << mind_map[virtual_position.y].size();
+            std::cout << "\ny : " << mind_map.size();
+            //std::cout << "\npos x : " << this->current_position.x;
+            //std::cout << "\npos y : " << this->current_position.y;
+            std::cout << "\npos x virt : " << this->virtual_position.x;
+            std::cout << "\npos y virt : " << this->virtual_position.y << '\n';
         }
 };
 
@@ -151,15 +259,17 @@ class Robot{
 int main(){
     Robot bot1;
     int i = 0;
+    //bot1.print();
     while(i < 5){
+        std::cout << '\n' << i << '\n';
         bot1.print();
-        bot1.expand_x_minus();
+        bot1.expand_x_plus();
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "\x1B[H";
+        //std::cout << "\x1B[H";
     }
 
-    while(i < 10){
+    /*while(i < 10){
         bot1.print();
         bot1.expand_y_minus();
         i++;
@@ -181,6 +291,6 @@ int main(){
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
-    }
+    }*/
 
 }
