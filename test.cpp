@@ -55,6 +55,13 @@ enum class TileState{
     WALL
 };
 
+enum class Direction{
+    LEFT,
+    RIGHT, 
+    UP, 
+    DOWN    
+};
+
 Position random_pos_picker(){
     std::random_device seed;
     std::mt19937 generator(seed());
@@ -92,11 +99,69 @@ class Robot{
             { 1,  1}//kanan bawah
         }};
 
+        const std::array<Position, 3> left_offsets{{{0, -1}, {-1, -1}, {1, -1}}};
+        const std::array<Position, 3> right_offsets{{{0, 1}, {-1, 1}, {1, 1}}};
+        const std::array<Position, 3> up_offsets{{{-1, 0}, {-1, -1}, {-1, 1}}};
+        const std::array<Position, 3> down_offsets{{{1, 0}, {1, 1}, {1, -1}}};
+
+        const std::array<std::array<Position, 3>, 4> movement_offsets{{
+            left_offsets,
+            right_offsets,
+            up_offsets,
+            down_offsets
+        }};
+
         void discover_tile(const Position& pos){
             map_memo.insert({pos, 
                 (map[pos.y][pos.x] == ' ') ? TileState::EMPTY : TileState::WALL});
 
             mind_map[pos.y][pos.x] = ((map[pos.y][pos.x] == ' ') ? ' ' : '#');
+        }
+
+        void resize_map(const Direction& dir){
+            if(dir == Direction::LEFT){
+                if(virtual_position.x - 1 == 0){
+                    for (int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
+                    this->virtual_position.x += 1;
+
+                    std::unordered_map<Position, TileState, PositionHash> new_map;
+
+                    for(const auto &pair : map_memo){
+                        Position new_pos{pair.first.y, pair.first.x + 1};
+
+                        new_map.insert({new_pos, pair.second});
+                    }
+
+                    map_memo = std::move(new_map);
+                }
+            }
+
+            else if(dir == Direction::UP){
+                if(virtual_position.y - 1 == 0){
+                    mind_map.insert(mind_map.begin(), std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+                    virtual_position.y += 1;
+                    std::unordered_map<Position, TileState, PositionHash> new_map;
+
+                    for(const auto &pair : map_memo){
+                        Position new_pos{pair.first.y + 1, pair.first.x};
+
+                        new_map.insert({new_pos, pair.second});
+                    }
+                    map_memo = std::move(new_map);
+                }
+            }
+
+            else if(dir == Direction::RIGHT){
+                if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1)for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');
+            }
+            
+
+            else if(dir == Direction::DOWN){
+                if(virtual_position.y + 1 == mind_map.size() - 1)mind_map.push_back(std::vector <char>(mind_map[virtual_position.y].size(), ' '));
+            }
+            else{
+                std::cout << "\nsome error\n";
+            }
         }
 
         std::unordered_map<Position, TileState, PositionHash> map_memo;
@@ -121,107 +186,29 @@ class Robot{
             }
         }
 
-        void expand_x_plus(){//right
-            auto iterator = map_memo.find({virtual_position.y, virtual_position.x + 1});
+        void move(const Direction& dir){
+            std::array<Position, 3> offset;
+            switch(dir){
+                case Direction::LEFT : offset = movement_offsets[0]; break;
+                case Direction::RIGHT : offset = movement_offsets[1]; break;
+                case Direction::UP : offset = movement_offsets[2]; break;
+                case Direction::DOWN : offset = movement_offsets[3]; break;
+            }
+
+            auto iterator = map_memo.find({virtual_position.y + offset[0].y, virtual_position.x + offset[0].x});
             if(iterator->second != TileState::WALL){
                 //std::cout << "\na";
-                this->virtual_position.x += 1;
-                this->current_position.x += 1;
+                this->virtual_position.x += offset[0].x;
+                this->virtual_position.y += offset[0].y;
+                this->current_position.x += offset[0].x;
+                this->current_position.y += offset[0].y;
 
-                if(map_memo.find(Position{virtual_position.y, virtual_position.x + 1}) == map_memo.end()){
-                    if(virtual_position.x + 1 == mind_map[virtual_position.y].size() - 1) {for(int i = 0; i < mind_map.size(); i++)mind_map[i].push_back(' ');}
-
-                    discover_tile({virtual_position.y, virtual_position.x + 1});
-
-                    for(const Position& d : std::array<Position, 2>{{{-1, 1}, {1, 1}}}){
-                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
-                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
-                        }
-                    }
-                }
-            }
-            else return;
-        }
-
-        void expand_x_minus(){//left
-            auto iterator = map_memo.find({virtual_position.y, virtual_position.x - 1});
-            if(iterator->second != TileState::WALL){
-                this->virtual_position.x -= 1;
-                this->current_position.x -= 1;
-                //std::cout << "\nmoving left\n";
-                if(map_memo.find(Position{virtual_position.y, virtual_position.x - 1}) == map_memo.end()){
-                    if(virtual_position.x - 1 == 0){
-                        for (int i = 0; i < mind_map.size(); i++)mind_map[i].insert(mind_map[i].begin(), ' ');
-                        this->virtual_position.x += 1;
-
-                        std::unordered_map<Position, TileState, PositionHash> new_map;
-
-                        for(const auto &pair : map_memo){
-                            Position new_pos{pair.first.y, pair.first.x + 1};
-
-                            new_map.insert({new_pos, pair.second});
-                        }
-
-                        map_memo = std::move(new_map);
-                    }
-
-                    discover_tile({virtual_position.y, virtual_position.x - 1});
-
-                    for(const Position& d : std::array<Position, 2>{{{-1, -1}, {1, -1}}}){
-                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
-                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
-                        }
-                    }
-                }
-            }
-            else return;
-        }
-
-        void expand_y_minus(){//up
-            auto iterator = map_memo.find({virtual_position.y - 1, virtual_position.x});
-            if(iterator->second != TileState::WALL){
-                this->virtual_position.y -= 1;
-                this->current_position.y -= 1;
-
-                if(map_memo.find(Position{virtual_position.y - 1, virtual_position.x}) == map_memo.end()){
-                    if(virtual_position.y - 1 == 0){
-                        mind_map.insert(mind_map.begin(), std::vector <char>(mind_map[virtual_position.y].size(), ' '));
-                        virtual_position.y += 1;
-                        std::unordered_map<Position, TileState, PositionHash> new_map;
-    
-                        for(const auto &pair : map_memo){
-                            Position new_pos{pair.first.y + 1, pair.first.x};
-
-                            new_map.insert({new_pos, pair.second});
-                        }
-                        map_memo = std::move(new_map);
-                    }
-                    discover_tile({virtual_position.y - 1, virtual_position.x});
-                    for(const Position& d : std::array<Position, 2>{{{-1, -1}, {-1, 1}}}){
-                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
-                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
-                        }
-                    }
-                }
-            }
-            else return;
-        }
-
-        void expand_y_plus(){
-            auto iterator = map_memo.find({virtual_position.y + 1, virtual_position.x});
-            if(iterator->second != TileState::WALL){
-                //std::cout << "\na";
-                this->virtual_position.y += 1;
-                this->current_position.y += 1;
-
-                if(map_memo.find(Position{virtual_position.y + 1, virtual_position.x}) == map_memo.end()){
-                    if(virtual_position.y + 1 == mind_map.size() - 1)mind_map.push_back(std::vector <char>(mind_map[virtual_position.y].size(), ' '));
-
-                    discover_tile({virtual_position.y + 1, virtual_position.x});
-
-                    for(const Position& d : std::array<Position, 2>{{{1, 1}, {1, -1}}}){
-                        if(map_memo.find({virtual_position.y + d.y, virtual_position.x + d.x}) == map_memo.end()){
-                            discover_tile({virtual_position.y + d.y, virtual_position.x + d.x});
+                if(map_memo.find(Position{virtual_position.y + offset[0].y, virtual_position.x + offset[0].x}) == map_memo.end()){
+                    resize_map(dir);
+                    discover_tile({virtual_position.y + offset[0].y, virtual_position.x + offset[0].x});
+                    for(int i = 1; i < offset.size(); i++){
+                        if(map_memo.find({virtual_position.y + offset[i].y, virtual_position.x + offset[i].x}) == map_memo.end()){
+                            discover_tile({virtual_position.y + offset[i].y, virtual_position.x + offset[i].x});
                         }
                     }
                 }
@@ -259,11 +246,13 @@ class Robot{
 int main(){
     Robot bot1;
     int i = 0;
-    //bot1.print();
+    //bot1.print()
     while(i < 10){
         std::cout << '\n' << i << '\n';
         bot1.print();
-        bot1.expand_y_plus();
+        bot1.move(Direction::UP);
+        bot1.print();
+        bot1.move(Direction::DOWN);
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
