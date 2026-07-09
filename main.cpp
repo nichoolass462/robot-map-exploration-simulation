@@ -247,12 +247,40 @@ int main(){
     Robot bot1;
     int i = 0;
     //bot1.print()
-    while(i < 10){
+    while(i < 5){
         std::cout << '\n' << i << '\n';
         bot1.print();
         bot1.move(Direction::UP);
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+    i = 0;
+
+    while(i < 5){
+        std::cout << '\n' << i << '\n';
+        bot1.print();
+        bot1.move(Direction::LEFT);
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+    i = 0;
+
+    while(i < 5){
+        std::cout << '\n' << i << '\n';
         bot1.print();
         bot1.move(Direction::DOWN);
+        i++;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "\x1B[H";
+    }
+    i = 0;
+
+    while(i < 5){
+        std::cout << '\n' << i << '\n';
+        bot1.print();
+        bot1.move(Direction::RIGHT);
         i++;
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "\x1B[H";
