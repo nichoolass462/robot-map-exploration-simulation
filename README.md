@@ -1,0 +1,1 @@
+This is a robot simulation written in C++. The robot is controlled with WASD and it only knows its surrounding on a 3x3 grid. The robot knows where it starts on the map but does not have information about the rest of the map. As it moves, it discovers tiles and records known tiles
